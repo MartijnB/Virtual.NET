@@ -1,4 +1,4 @@
-﻿namespace Virtual.NET.Protocols.DataLinkLayer {
+﻿namespace Virtual.NET.Protocols {
     public enum DataLinkLayerProtocol {
         IPv4 = 0x0800,
         ARP = 0x0806,

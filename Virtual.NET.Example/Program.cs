@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Net;
+using System.Net.NetworkInformation;
 using SharpPcap;
+using Virtual.NET.Devices;
 using Virtual.NET.Protocols.LinkLayer;
 using Version = SharpPcap.Version;
 
 namespace Virtual.NET.Example {
     internal class Program {
-        private static readonly int _preselectedDevice = 3;
-
         private static void Main(string[] args) {
             Console.WriteLine("Virtual.NET {0}\n", VirtualNet.Version);
             Console.WriteLine("Using SharpPcap {0}\n", Version.VersionString);
@@ -28,34 +29,41 @@ namespace Virtual.NET.Example {
                 i++;
             }
 
-            ICaptureDevice device;
-            if (_preselectedDevice == -1) {
-                Console.WriteLine();
-                Console.Write("-- Please choose a device to send a packet on: ");
-                i = int.Parse(Console.ReadLine());
+            Console.WriteLine("Starting virtual switch...");
 
-                device = devices[i];
-            }
-            else {
-                device = devices[_preselectedDevice];
-            }
+            var virtualSwitch = new VirtualNetworkSwitch();
 
-            Console.WriteLine();
-            Console.WriteLine("Selected device: {0}", device.Description);
-
-            INetworkDevice virtualNetworkDevice = new VirtualNetworkDevice(device);
-
-            virtualNetworkDevice.OnPacketArrival += delegate(object sender, PacketArrivalEventHandlerArgs handlerArgs) {
+            /*
+            virtualSwitch.OnPacketIncoming += (sender, handlerArgs) => {
                 EthernetProtocolPacket packet = handlerArgs.Packet as EthernetProtocolPacket;
-
-                //Console.WriteLine(BitConverter.ToString(packet.ToBytes()).Replace("-", ":"));
 
                 Console.WriteLine("{0} -> {1} Protocol: {2} Length: {3}", packet.SourceAddress, packet.DestinationAddress, packet.PayloadProtocol, packet.PayloadData.Length);
             };
+             * */
+            
 
-            //virtualNetworkDevice.RegisterProtocolHandler(new EthernetProtocolHandler(PhysicalAddress.Parse("AB:CD:EF:12:34:56")));
+            foreach (ICaptureDevice dev in devices) {
+                var hardwareDevice = new HardwareNetworkInterface(dev);
+                hardwareDevice.Start();
 
-            virtualNetworkDevice.Start();
+                virtualSwitch.AddDevice(hardwareDevice);
+            }
+
+            virtualSwitch.Start();
+
+            Console.WriteLine("Virtual switch loaded!");
+
+            var virtualEthernetNetworkDevice = new VirtualNetworkInterface(PhysicalAddress.Parse("AB-CD-EF-AB-CD-EF"));
+            //virtualEthernetNetworkDevice.AddNetworkDriver(new IPv4NetworkDriver(IPAddress.Parse("10.0.0.240")));
+
+            virtualEthernetNetworkDevice.OnPacketIncoming += (sender, handlerArgs) => {
+                EthernetProtocolPacket packet = handlerArgs.Packet as EthernetProtocolPacket;
+
+                Console.WriteLine("{0} -> {1} Protocol: {2} Length: {3}", packet.SourceAddress, packet.DestinationAddress, packet.PayloadProtocol, packet.PayloadData.Length);
+            };
+            virtualEthernetNetworkDevice.Start();
+
+            virtualSwitch.AddDevice(virtualEthernetNetworkDevice);
         }
     }
 }

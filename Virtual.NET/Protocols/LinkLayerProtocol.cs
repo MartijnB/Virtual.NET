@@ -7,8 +7,12 @@ namespace Virtual.NET.Protocols {
         Ethernet
     }
 
+    public interface ILinkLayerProtocolHandler {
+        bool IsValidPacket(LinkLayerProtocolPacket packet);
+    }
+
     public class LinkLayerProtocolFactory {
-        public static ILinkLayerProtocolPacket Create(RawPacket packet, LinkLayerProtocol protocol) {
+        public static LinkLayerProtocolPacket Create(RawPacket packet, LinkLayerProtocol protocol) {
             switch (protocol) {
                 case LinkLayerProtocol.Ethernet:
                     return new EthernetProtocolPacket(packet);
@@ -18,7 +22,7 @@ namespace Virtual.NET.Protocols {
             }
         }
 
-        public static ILinkLayerProtocolPacket Create(RawPacket packet, LinkLayers linkLayerType) {
+        public static LinkLayerProtocolPacket Create(RawPacket packet, LinkLayers linkLayerType) {
             switch (linkLayerType) {
                 case LinkLayers.Ethernet:
                     return new EthernetProtocolPacket(packet);

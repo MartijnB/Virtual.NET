@@ -6,6 +6,10 @@ namespace Virtual.NET {
             _data = data;
         }
 
+        public override int Length {
+            get { return _data.Length; }
+        }
+
         public override byte[] ToBytes() {
             return _data;
         }
